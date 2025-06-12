@@ -1,0 +1,6 @@
+This directory contains the following image files:
+- default-book-cover.jpg
+- default-avatar.png
+- logo.png
+
+Please add these image files to this directory. 

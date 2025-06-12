@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: moyun_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: moyun_reading
+      MYSQL_USER: moyun
+      MYSQL_PASSWORD: moyunpassword
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - moyun_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: moyun_backend
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: moyun
+      DB_PASSWORD: moyunpassword
+      DB_NAME: moyun_reading
+      JWT_SECRET: your_jwt_secret
+    ports:
+      - "3000:3000"
+    networks:
+      - moyun_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: moyun_frontend
+    depends_on:
+      - backend
+    environment:
+      VUE_APP_API_URL: http://localhost:3000/api
+    ports:
+      - "8080:8080"
+    networks:
+      - moyun_network
+
+volumes:
+  db_data:
+
+networks:
+  moyun_network:
+    driver: bridge
