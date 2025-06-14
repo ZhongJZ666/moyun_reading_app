@@ -71,6 +71,12 @@ const routes = [
     component: loadView('books/Recommend'),
     meta: { requiresAuth: true, roles: ['mentor', 'admin'] }
   },
+  {
+    path: '/my-books',
+    name: 'MyBooks',
+    component: () => import('@/views/books/MyBooks.vue'),
+    meta: { requiresAuth: true }
+  },
   // 圈子相关路由
   {
     path: '/my-circle',

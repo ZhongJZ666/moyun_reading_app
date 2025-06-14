@@ -1,7 +1,7 @@
 import CircleAPI from '@/api/circles'
 
 const state = {
-  currentCircle: null,
+  circles: [],
   members: [],
   loading: false,
   error: null,
@@ -10,8 +10,8 @@ const state = {
 }
 
 const mutations = {
-  SET_CIRCLE(state, circle) {
-    state.currentCircle = circle
+  SET_CIRCLES(state, circles) {
+    state.circles = circles
   },
   SET_MEMBERS(state, members) {
     state.members = members
@@ -34,6 +34,20 @@ const mutations = {
 }
 
 const actions = {
+  // 获取我加入的所有圈子
+  async fetchMyCircles({ commit }) {
+    commit('SET_LOADING', true)
+    try {
+      const circles = await CircleAPI.getMyCircles()
+      commit('SET_CIRCLES', circles)
+      commit('SET_ERROR', null)
+    } catch (error) {
+      commit('SET_ERROR', error.message)
+    } finally {
+      commit('SET_LOADING', false)
+    }
+  },
+
   // 获取我的圈子
   async fetchMyCircle({ commit }) {
     commit('SET_LOADING', true)

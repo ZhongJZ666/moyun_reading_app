@@ -103,6 +103,18 @@ CREATE TABLE `reports` (
   FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='举报记录表';
 
+-- 用户书库表
+CREATE TABLE IF NOT EXISTS user_books (
+  id INT NOT NULL AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  book_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_user_book (user_id, book_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户书库表';
+
 -- 初始化管理员账号
 INSERT INTO `users` (`username`, `password`, `email`, `role`) 
 VALUES (
@@ -140,7 +152,7 @@ VALUES
 INSERT INTO `circle_members` (`circle_id`, `user_id`) 
 VALUES 
   (1, 4), (1, 5),  -- 导师2的学生加入圈子1
-  (2, 4);          -- 学生1同时加入圈子2
+  (2, 4), (2, 3);  -- 学生1同时加入圈子2，让 mentor2（id=3）加入圈子2
 
 CREATE TABLE IF NOT EXISTS notifications (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -177,3 +189,65 @@ VALUES
 -- 补充测试数据
 UPDATE books SET content = '这是《JavaScript高级程序设计》的全部内容示例，适合前端开发者深入学习。' WHERE id = 1;
 UPDATE books SET content = '这是《深入理解计算机系统》的全部内容示例，适合计算机基础学习。' WHERE id = 2;
+
+-- 初始化用户书库测试数据
+INSERT INTO user_books (user_id, book_id) VALUES
+  (2, 1), -- mentor1 收藏 JavaScript高级程序设计
+  (2, 2), -- mentor1 收藏 深入理解计算机系统
+  (4, 1), -- student1 收藏 JavaScript高级程序设计
+  (5, 2); -- student2 收藏 深入理解计算机系统
+
+-- 圈子日志表
+CREATE TABLE IF NOT EXISTS circle_posts (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  circle_id INT NOT NULL COMMENT '所属圈子ID',
+  author_id INT NOT NULL COMMENT '作者ID',
+  title VARCHAR(100) NOT NULL COMMENT '日志标题',
+  content TEXT NOT NULL COMMENT '日志内容',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='圈子日志表';
+
+-- 圈子日志测试数据
+INSERT INTO circle_posts (circle_id, author_id, title, content)
+VALUES
+  (1, 4, '前端学习心得', '今天学习了Vue组件注册，收获很大！'),
+  (1, 5, '圈子打卡', '和大家一起进步，感觉很棒！'),
+  (2, 4, '系统架构初体验', '第一次接触后端架构，收获很多。');
+
+-- 活动表
+CREATE TABLE IF NOT EXISTS activities (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  mentor_id INT NOT NULL,
+  content VARCHAR(255) NOT NULL,
+  time DATETIME NOT NULL,
+  type VARCHAR(50) DEFAULT 'info',
+  FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='导师活动表';
+
+-- 待办事项表
+CREATE TABLE IF NOT EXISTS todos (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  mentor_id INT NOT NULL,
+  content VARCHAR(255) NOT NULL,
+  completed BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='导师待办事项表';
+
+-- 初始化活动测试数据
+INSERT INTO activities (mentor_id, content, time, type) VALUES
+  (2, '学生1提交了读后感', NOW() - INTERVAL 1 DAY, 'success'),
+  (2, '学生2加入了圈子', NOW() - INTERVAL 2 DAY, 'info'),
+  (2, '导师1发布了新书推荐', NOW() - INTERVAL 3 DAY, 'info'),
+  (3, '学生1评论了你的帖子', NOW() - INTERVAL 1 DAY, 'comment'),
+  (3, '导师2收到系统通知', NOW() - INTERVAL 2 DAY, 'system');
+
+-- 初始化待办事项测试数据
+INSERT INTO todos (mentor_id, content, completed) VALUES
+  (2, '审核学生1的读后感', FALSE),
+  (2, '准备下周的读书分享', TRUE),
+  (2, '回复学生2的问题', FALSE),
+  (3, '检查学生1的评论', TRUE),
+  (3, '发布新通知', FALSE);

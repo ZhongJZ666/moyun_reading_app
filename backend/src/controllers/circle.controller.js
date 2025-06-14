@@ -53,6 +53,17 @@ class CircleController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async joinCircle(req, res) {
+    try {
+      const userId = req.user.id;
+      const circleId = req.params.circleId;
+      await CircleService.addMember(circleId, userId);
+      res.json({ message: '加入成功' });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = CircleController;

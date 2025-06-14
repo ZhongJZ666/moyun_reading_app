@@ -9,6 +9,13 @@
         >
           推荐书籍
         </el-button>
+        <el-button 
+          v-if="isMentor || isStudent" 
+          type="success" 
+          @click="goToMyBooks"
+        >
+          我的书库
+        </el-button>
       </div>
       
       <el-divider />
@@ -43,7 +50,26 @@
             :key="book.id"
             :book="book"
             @click.native="goToDetail(book.id)"
-          />
+          >
+            <template #footer>
+              <el-button 
+                v-if="(isMentor || isStudent) && !isInMyBooks(book.id)" 
+                size="mini" 
+                type="success" 
+                @click.stop="addToMyBooks(book.id)"
+              >
+                加入我的书库
+              </el-button>
+              <el-button 
+                v-if="(isMentor || isStudent) && isInMyBooks(book.id)" 
+                size="mini" 
+                type="info" 
+                disabled
+              >
+                已添加
+              </el-button>
+            </template>
+          </book-card>
         </template>
         <template v-else>
           <el-empty description="暂无书籍" />
@@ -63,6 +89,7 @@
   <script>
   import { mapState, mapGetters, mapActions } from 'vuex'
   import BookCard from '@/components/BookCard.vue'
+  import userBooksApi from '@/api/userBooks'
   
   export default {
     name: 'BookListView',
@@ -71,22 +98,23 @@
       return {
         searchQuery: '',
         page: 1,
-        pageSize: 12
+        pageSize: 12,
+        myBookIds: []
       }
     },
     computed: {
       ...mapState('books', ['books', 'loading', 'error']),
-      ...mapGetters('auth', ['isMentor']),
+      ...mapGetters('auth', ['isMentor', 'userRole']),
+      isStudent() {
+        return this.userRole === 'student'
+      },
       total() {
         return this.books?.length || 0
       }
     },
     async created() {
-      try {
-        await this.fetchBooks()
-      } catch (error) {
-        console.error('获取书籍列表失败:', error)
-      }
+      await this.fetchBooks()
+      await this.fetchMyBooks()
     },
     methods: {
       ...mapActions('books', ['fetchBooks']),
@@ -97,6 +125,9 @@
       },
       goToRecommend() {
         this.$router.push('/recommend')
+      },
+      goToMyBooks() {
+        this.$router.push('/my-books')
       },
       async handleSearch() {
         this.page = 1
@@ -121,6 +152,18 @@
         } catch (error) {
           console.error('切换页面失败:', error)
         }
+      },
+      async fetchMyBooks() {
+        const userBooks = await userBooksApi.getBooks()
+        this.myBookIds = userBooks.map(ub => ub.book_id)
+      },
+      isInMyBooks(bookId) {
+        return this.myBookIds.includes(bookId)
+      },
+      async addToMyBooks(bookId) {
+        await userBooksApi.addBook(bookId)
+        this.$message.success('已加入我的书库')
+        await this.fetchMyBooks()
       }
     }
   }

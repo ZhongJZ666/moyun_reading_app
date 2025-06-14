@@ -58,7 +58,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS配置
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['X-Content-Type-Options']
 }));
@@ -76,6 +76,8 @@ const commentRoutes = require('./routes/comment.routes');
 const messageRoutes = require('./routes/messageRoutes');
 const notificationRoutes = require('./routes/notification.routes');
 const mentorRoutes = require('./routes/mentor.routes');
+const userBookRoutes = require('./routes/userBook.routes');
+const todoRoutes = require('./routes/todo.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -86,6 +88,8 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/mentor', mentorRoutes);
+app.use('/api/user-books', userBookRoutes);
+app.use('/api/todos', todoRoutes);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {

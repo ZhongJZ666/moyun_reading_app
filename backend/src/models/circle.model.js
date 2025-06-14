@@ -22,6 +22,14 @@ class Circle {
 
   // 添加成员到圈子
   static async addMember(circleId, userId) {
+    // 检查是否已是成员
+    const [rows] = await db.execute(
+      `SELECT 1 FROM circle_members WHERE circle_id = ? AND user_id = ?`,
+      [circleId, userId]
+    );
+    if (rows.length > 0) {
+      throw new Error('你已加入该圈子');
+    }
     await db.execute(
       `INSERT INTO circle_members (circle_id, user_id) 
        VALUES (?, ?)`,

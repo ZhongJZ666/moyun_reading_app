@@ -1,126 +1,68 @@
 <template>
     <div class="circle-container">
-      <template v-if="circle && circle.id">
+      <template v-if="circles && circles.length">
+        <h3>我加入的圈子</h3>
         <el-row :gutter="20">
-          <el-col :span="6">
-            <circle-sidebar 
-              :circle="circle" 
-              :members="members"
-              @add-member="showAddMemberDialog = true"
-            />
-          </el-col>
-          <el-col :span="18">
-            <div class="post-area">
-              <create-post-form 
-                v-if="isMember"
-                :circle-id="circle.id"
-                @created="handlePostCreated"
-              />
-              
-              <post-list 
-                :posts="posts" 
-                :loading="loading"
-                @load-more="loadMorePosts"
-              />
-            </div>
+          <el-col :span="6" v-for="c in circles" :key="c.id">
+            <el-card>
+              <div>{{ c.name }}</div>
+              <div>{{ c.description }}</div>
+            </el-card>
           </el-col>
         </el-row>
-    
-        <el-dialog 
-          title="添加成员" 
-          v-model="showAddMemberDialog"
-          width="30%"
-        >
-          <add-member-form 
-            :circle-id="circle.id"
-            @success="handleMemberAdded"
-          />
-        </el-dialog>
       </template>
-      <template v-else>
-        <div>
-          <el-empty description="你还没有加入任何圈子" />
-          <div v-if="allCircles && allCircles.length">
-            <h3>所有圈子</h3>
-            <el-row :gutter="20">
-              <el-col :span="6" v-for="c in allCircles" :key="c.id">
-                <el-card>
-                  <div>{{ c.name }}</div>
-                  <div>{{ c.description }}</div>
-                  <el-button type="primary" size="mini" @click="joinCircle(c.id)">加入圈子</el-button>
-                </el-card>
-              </el-col>
-            </el-row>
-          </div>
-        </div>
-      </template>
+      <h3 style="margin-top: 32px;">所有圈子</h3>
+      <el-row :gutter="20">
+        <el-col :span="6" v-for="c in allCircles" :key="c.id">
+          <el-card :class="{ 'joined-circle': isJoined(c.id) }">
+            <div>{{ c.name }}</div>
+            <div>{{ c.description }}</div>
+            <el-button 
+              type="primary" 
+              size="mini" 
+              :disabled="isJoined(c.id)"
+              @click="joinCircle(c.id)">
+              {{ isJoined(c.id) ? '已加入' : '加入圈子' }}
+            </el-button>
+          </el-card>
+        </el-col>
+      </el-row>
     </div>
   </template>
   
   <script>
   import { mapState, mapGetters, mapActions } from 'vuex'
-  import CircleSidebar from '@/components/CircleSidebar.vue'
-  import CreatePostForm from '@/components/CreatePostForm.vue'
-  import PostList from '@/components/PostList.vue'
-  import AddMemberForm from '@/components/AddMemberForm.vue'
+  import circlesApi from '@/api/circles'
   
   export default {
     name: 'MyCircleView',
-    components: {
-      CircleSidebar,
-      CreatePostForm,
-      PostList,
-      AddMemberForm
-    },
     data() {
       return {
-        showAddMemberDialog: false,
         page: 1,
         pageSize: 10
       }
     },
     computed: {
-      ...mapState('circles', ['circle', 'members', 'loading', 'allCircles']),
-      ...mapState('posts', ['posts']),
-      ...mapGetters('auth', ['isMentor', 'currentUser']),
-      isMember() {
-        return this.members.some(m => m.id === this.currentUser.id)
-      }
+      ...mapState('circles', ['circles', 'members', 'loading', 'allCircles']),
+      ...mapGetters('auth', ['isMentor', 'currentUser'])
     },
     async created() {
-      await this.fetchCircleData()
+      await this.fetchMyCircles()
       await this.fetchAllCircles()
     },
     methods: {
-      ...mapActions('circles', ['fetchMyCircle', 'fetchAllCircles']),
-      ...mapActions('posts', ['fetchCirclePosts']),
-      async fetchCircleData() {
-        await this.fetchMyCircle()
-        if (this.circle?.id) {
-          await this.fetchCirclePosts({
-            circleId: this.circle.id,
-            page: this.page,
-            pageSize: this.pageSize
-          })
-        }
-      },
-      handlePostCreated(newPost) {
-        this.posts.unshift(newPost)
-      },
-      handleMemberAdded() {
-        this.showAddMemberDialog = false
-        this.fetchCircleData()
-      },
-      async loadMorePosts() {
-        this.page++
-        await this.fetchCirclePosts({
-          circleId: this.circle.id,
-          page: this.page,
-          pageSize: this.pageSize
-        })
+      ...mapActions('circles', ['fetchMyCircles', 'fetchAllCircles']),
+      isJoined(circleId) {
+        return this.circles.some(c => c.id === circleId)
       },
       async joinCircle(circleId) {
-        this.$message.success('加入圈子功能请根据后端API实现！')
+        try {
+          await circlesApi.joinCircle(circleId)
+          this.$message.success('加入圈子成功')
+          await this.fetchMyCircles()
+        } catch (e) {
+          this.$message.error(e.message || '加入圈子失败')
+        }
       }
     }
   }
@@ -135,5 +77,10 @@
   
   .post-area {
     padding: 0 20px;
+  }
+  
+  .joined-circle {
+    border: 2px solid #67c23a;
+    background: #f6ffed;
   }
   </style>

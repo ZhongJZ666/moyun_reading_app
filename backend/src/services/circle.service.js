@@ -1,11 +1,12 @@
 const Circle = require('../models/circle.model');
-const User = require('../models/user.model');
+const UserModel = require('../models/user.model');
 
 class CircleService {
   // 创建圈子
   static async create(circleData) {
     // 验证导师是否存在
-    const mentor = await User.findById(circleData.mentor_id);
+    const User = await UserModel;
+    const mentor = await User.findByPk(circleData.mentor_id);
     if (!mentor || mentor.role !== 'mentor') {
       throw new Error('指定的导师不存在');
     }
@@ -21,10 +22,10 @@ class CircleService {
 
   // 添加成员到圈子
   static async addMember(circleId, userId) {
-    // 验证用户是否存在
-    const user = await User.findById(userId);
+    // 获取 User Model
+    const User = await UserModel;
+    const user = await User.findByPk(userId);
     if (!user) throw new Error('用户不存在');
-
     await Circle.addMember(circleId, userId);
   }
 

@@ -30,4 +30,7 @@ router.post('/:circleId/members',
 // 获取所有圈子
 router.get('/', CircleController.getAllCircles);
 
+// 当前用户加入圈子
+router.post('/:circleId/join', auth(), CircleController.joinCircle);
+
 module.exports = router;

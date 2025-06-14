@@ -1,5 +1,5 @@
 <template>
-  <el-card class="circle-card" :body-style="{ padding: '0' }">
+  <el-card class="circle-card" :body-style="{ padding: '0' }" @click="handleView">
     <div class="circle-cover">
       <el-image :src="circle.cover" fit="cover" :alt="circle.name">
         <template #error>
@@ -62,7 +62,7 @@ export default {
       this.$emit('join', this.circle)
     },
     handleView() {
-      this.$emit('view', this.circle)
+      this.$router.push(`/circle/${this.circle.id}`)
     }
   }
 }
